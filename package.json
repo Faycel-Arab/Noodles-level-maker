@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "webpack --mode development ./src/index.js --output ./public/bundle.js",
     "build": "webpack --mode production ./src/index.js --output ./dist/bundle.js",
-    "start": "webpack-dev-server --mode development --hot"
+    "start": "webpack-dev-server --mode development"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +24,7 @@
     "webpack": "^4.6.0",
     "webpack-cli": "^2.0.14",
     "webpack-dev-server": "^3.1.4",
+    "webpack-serve": "^2.0.2",
     "write-file-webpack-plugin": "^4.3.2"
   },
   "dependencies": {

@@ -6,7 +6,11 @@ module.exports = {
         app: './src/index.js'
     },
     devServer: {
-        contentBase: './dist'
+        contentBase: './public',
+        host: '0.0.0.0',
+        allowedHosts: [
+            '8080-disarmcommutingboar.cdr.co'
+        ]
     },
     output: {
         path: path.resolve(__dirname, 'public'),
@@ -21,16 +25,16 @@ module.exports = {
                     loader: 'babel-loader',
                     options: { presets: ['env'] }
                 }
-                
+
             },
             {
                 test: /\.css$/,
-                use: [ 'style-loader', 'css-loader' ]
+                use: ['style-loader', 'css-loader']
             },
             {
                 test: /\.(png|jpg|gif)$/i,
-                use:[{
-                        loader: 'file-loader',
+                use: [{
+                    loader: 'file-loader',
                 }]
             }
         ]
@@ -38,8 +42,8 @@ module.exports = {
     resolve: { extensions: ['*', '.js', '.jsx'] },
     plugins: [
         new CopyWebpackPlugin([
-            {from: "./src/assets/tiles", to:"./tiles"},
-            {from: "./src/assets/loaders", to: "./loaders"}
+            { from: "./src/assets/tiles", to: "./tiles" },
+            { from: "./src/assets/loaders", to: "./loaders" }
         ])
     ]
-};
+};;
