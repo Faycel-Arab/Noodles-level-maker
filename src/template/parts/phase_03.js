@@ -169,7 +169,7 @@ class Setup extends React.Component{
     }
 
     /**
-     * display a loader or a success image
+     * display loader or success image
      */
     isLoading(){
         if( !this.state.regular_images_loaded 
