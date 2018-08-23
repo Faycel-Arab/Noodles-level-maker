@@ -152,6 +152,8 @@ class Main extends React.Component{
         return(
           <Setup 
             atlas={this.state.selectedType}
+            cols={this.state.cols}
+            rows={this.state.rows}
             errorHandler={(msg) => this.displayErrorBox(msg)}
             setFiles={(files) => this.setComparisonImages(files)}
           />

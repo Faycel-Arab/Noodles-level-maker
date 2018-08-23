@@ -83,8 +83,11 @@ class Setup extends React.Component{
             // check if tile index is valid
             if( ti < map[fi] ){
 
+                // set folder
+                let flder = folderName+""+this.props.cols+"x"+this.props.rows+"/";
+
                 // set image src
-                const src = folderName+""+this.props.atlas+"/tile"+fi+"/"+ti+".png";
+                const src = flder+""+this.props.atlas+"/t"+fi+"/r"+ti+".png";
                 
                 // load image
                 this.asyncImageLoader( src )
