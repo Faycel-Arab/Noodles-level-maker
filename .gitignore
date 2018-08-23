@@ -3,4 +3,3 @@ logs
 *.log
 npm-debug.log*
 dist
-webpack.config.js
