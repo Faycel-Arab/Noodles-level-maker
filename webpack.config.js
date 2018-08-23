@@ -7,10 +7,6 @@ module.exports = {
     },
     devServer: {
         contentBase: './public',
-        host: '0.0.0.0',
-        allowedHosts: [
-            '8080-disarmcommutingboar.cdr.co'
-        ]
     },
     output: {
         path: path.resolve(__dirname, 'public'),

@@ -13,6 +13,10 @@ import Menu from "./template/parts/menu";
 import AssetsSelector from './template/parts/phase_01';
 import LevelsParameters from './template/parts/phase_02';
 import Setup from './template/parts/phase_03';
+import LevelProcessor from './template/parts/phase_04';
+
+// deps
+import Tiles_Map from "./functions";
 
 
 /**
@@ -56,7 +60,7 @@ class Main extends React.Component{
 
       // required assets for comparison
       // array of objects {folder_index, tile_index, image}
-      comparisonImages: [],
+      comparisonImages: {},
 
       // level params
       TilesTypes: [ 
@@ -149,12 +153,17 @@ class Main extends React.Component{
           <Setup 
             atlas={this.state.selectedType}
             errorHandler={(msg) => this.displayErrorBox(msg)}
+            setFiles={(files) => this.setComparisonImages(files)}
           />
           );
         break;
   
       case "Process images": 
-        return(<h2>Process images</h2>);
+        return(
+          <LevelProcessor 
+            regularTiles={this.state.comparisonImages.regular} 
+          />
+        );
         break;
       
       case "Download files": 
@@ -353,9 +362,104 @@ class Main extends React.Component{
    * array of objects {folder_index, tile_index, image}
    */
   setComparisonImages( files ){
-    this.setState({
-      comparisonImages: files
-    });
+
+    // starting and regular tiles map lengths
+    // Please don't get confused, 'map' is an object key here. hahaha got ya right ?? 
+    const SL = Tiles_Map( "starting", this.state.selectedType ).map.reduce( ( a, b ) => a + b, 0 ); 
+    const RL = Tiles_Map( "regular", this.state.selectedType ).map.reduce(  ( a, b ) => a + b, 0 ); 
+
+    console.log(files);
+
+    // flag 
+    let flag = false;
+
+    // check files
+    // check length
+    if( files && files.hasOwnProperty('starting') && files.hasOwnProperty('regular') ){
+
+      // check tiles 
+      // loop through files and check if valid
+      // each file must contain : 
+      // - folder_index {integer}
+      // - tiles_index  {integer}
+      // - image        {HTMLImageElement}
+      
+      // check starting tiles 
+      try {
+
+        
+        files.starting.forEach( file => {
+
+          if( typeof file !== "object" || 
+              !file.hasOwnProperty('folder_index') || typeof file.folder_index !== "number" ||
+              !file.hasOwnProperty('tile_index')   || typeof file.tile_index   !== "number" ||
+              !file.image        || !file.image instanceof HTMLImageElement
+            ){
+
+              flag = true;
+
+              // throw an expection to break out of loop 
+              // TODO: check for better solution
+              throw "invalid image"; 
+            }
+        })
+
+      } 
+      catch (e){
+
+        this.displayErrorBox( "It seems like a cat gone mad and mess with some files, please check console for more info.")
+
+        console.error( "An unexpected error happened, Please contact 'Mau' the sacred cat.")
+
+        // for unexpected errors
+        throw e;
+
+      }
+
+      // check regular tiles 
+      try {
+
+        
+        files.regular.forEach( file => {
+
+          if( typeof file !== "object" || 
+              !file.hasOwnProperty('folder_index') || typeof file.folder_index !== "number" ||
+              !file.hasOwnProperty('tile_index')   || typeof file.tile_index   !== "number" ||
+              !file.image                          || !file.image instanceof HTMLImageElement
+            ){
+
+              flag = true;
+
+              // throw an expection to break out of loop 
+              // TODO: check for better solution
+              throw file; 
+            }
+        })
+
+      } 
+      catch (e){
+
+        this.displayErrorBox( "It seems like a cat gone mad and mess with some files, please check console for more info.")
+
+        console.error( "An unexpected error happened, Please contact 'Mau' the sacred cat.")
+
+        // for unexpected errors
+        throw e;
+
+      }
+
+      // if all OK edit state
+      if( !flag ){
+        let clone = this.state;
+        clone.comparisonImages = files;
+        clone.phasesState[ this.state.currentPhase ] = true;
+
+        this.setState( clone );
+      }
+    }
+
+    else
+      this.displayErrorBox( "Seems like cats ate some of the tiles. \n unfortunatly" );;
   }
 
   render(){

@@ -10,22 +10,16 @@ class Setup extends React.Component{
         this.state = {
 
             // images
-            images: [],
+            images: { starting: [], regular: [] },
 
-            // starting images are loaded 
-            start_images_loaded: false,
-
-            // regular images are loaded 
-            regular_images_loaded: false,
-
-            // starting tiles map
-            STM: Tiles_Map( "starting", this.props.atlas).map,
+            // starting tiles map 
+            STM: Tiles_Map( "starting", this.props.atlas ).map,
 
             // regular tiles map
-            RTM: Tiles_Map( "regular", this.props.atlas).map,
+            RTM: Tiles_Map( "regular", this.props.atlas ).map,
 
-            // halt flag
-            halt: false,
+            // loading or success image
+            status_pic: "pacman-loader.gif",
 
             // waiting message
             message: "Did you know ? \n The fact that you are reading this is by it self a proof that you didn't know, isn't that right?"
@@ -56,14 +50,14 @@ class Setup extends React.Component{
    * push a new object state.images
    * @param {object} obj : {folder_index, tile_index, image}
    */
-    setImageState( obj ){
+    setImageState( obj, key ){
 
         let imageObj = this.state.images;
 
-        imageObj.push( obj );
+        imageObj[key].push( obj );
 
         this.setState({
-            images: imageObj,
+            images: imageObj
         })
     }
 
@@ -71,11 +65,12 @@ class Setup extends React.Component{
      * load tiles images
      * @param {array} map 
      * @param {string} folderName 
+     * @param {strig} key
      * @param {integer} tileIndex 
      * @param {integer} folderIndex 
      * @param {function} callback 
      */
-    tilesLoader( map, folderName, tileIndex = 0, folderIndex = 0, callback ){
+    tilesLoader( map, folderName, key, tileIndex = 0, folderIndex = 0, callback ){
 
         // aliases
         let fi = folderIndex;
@@ -99,27 +94,23 @@ class Setup extends React.Component{
                             folder_index: fi,
                             tile_index: ti,
                             image: img
-                        });
+                        }, key );
 
                         // if remaining tiles in the same folder
                         if( ti <  map[fi]-1 ){
                             ti = ti + 1;
-                            this.tilesLoader( map, fn, ti, fi, callback );
+                            this.tilesLoader( map, fn, key, ti, fi, callback );
                         }
 
                         else if( fi < map.length-1 ){
                             ti = 0;
                             fi = fi + 1;
-                            this.tilesLoader( map, fn, ti, fi, callback );
+                            this.tilesLoader( map, fn, key, ti, fi, callback );
                         }
 
                         else
                             callback();
                     }, () => {
-                       // halt everything
-                       this.setState({
-                           halt: true
-                       }) 
 
                        this.props.errorHandler( "We're unable to load some resources, please check console for more info");
                     });
@@ -129,68 +120,45 @@ class Setup extends React.Component{
 
     componentDidMount(){
 
-        setTimeout( () => {
+        if ( !this.state.regular_images_loaded && !this.state.start_images_loaded )
 
-            // tell user what is happening 
-            this.setState({
-                message: "Loading required assets, please wait..."
-            })
-            // create Images
-            // starting images
-            this.tilesLoader( this.state.STM,  "./tiles/starting/", 0, 0, () => {
-                setTimeout( () => {
-                    this.setState({
-                        starting_images_loaded: true,
-                    });
+            setTimeout( () => {
 
-                    if( this.state.regular_images_loaded 
-                        || this.state.starting_images_loaded )
-                        this.setState({
-                            message: "Everything is up, your majesty can proceed"
+                // tell user what is happening 
+                this.setState({
+                    message: "Loading required assets, please wait..."
+                })
+
+                // create Images
+                // starting images
+                if( this.state.STM && this.state.STM.length > 0 || 
+                    this.state.RTM && this.state.RTM.length > 0 )
+
+                    this.tilesLoader( this.state.STM,  "./tiles/starting/", 'starting', 0, 0, () => 
+                        this.tilesLoader( this.state.RTM,  "./tiles/regular/", 'regular', 0, 0, () => { 
+
+                            this.setState({
+                                message: "Everything is up, your majesty can proceed",
+                                status_pic: "success.png",
+                            })
+
+                            // set files on parent component {Main}
+                            this.props.setFiles( this.state.images )
                         })
-                }, 4000);
-            });
+                    )
 
-            // regular images
-            this.tilesLoader( this.state.RTM,  "./tiles/regular/", 0, 0, () => {
-                setTimeout( () => {
-                    this.setState({
-                        regular_images_loaded: true,
-                    });
-
-                    if( this.state.regular_images_loaded 
-                        && this.state.starting_images_loaded )
-                        this.setState({
-                            message: "Everything is up, your majesty can proceed"
-                        })
-                }, 4000);
-            });
-        }, 7000);
-    }
-
-    /**
-     * display loader or success image
-     */
-    isLoading(){
-        if( !this.state.regular_images_loaded 
-            || !this.state.starting_images_loaded )
-            return(
-                <div className="loader">
-                    <img src="./loaders/pacman-loader.gif" />
-                </div>
-            )
-        else
-            return(
-                <div className="loader">
-                    <img src="./loaders/success.png" />
-                </div>
-            )
+                else 
+                    this.props.errorHandler("Sorry cats are unable to find a map for "+this.props.atlas+" tiles")
+            
+            }, 3000);
     }
 
     render(){
         return(
             <div className="setup-status">
-                {this.isLoading()}
+                <div className="loader">
+                    <img src={"./loaders/"+this.state.status_pic} />
+                </div>
 
                 <div className="status-message">
                     <pre>{this.state.message}</pre>
