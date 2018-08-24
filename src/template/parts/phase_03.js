@@ -1,6 +1,6 @@
 import React from 'react';
 
-import Tiles_Map from '../../functions';
+import {Tiles_Map, asyncImageLoader} from '../../functions';
 
 class Setup extends React.Component{
 
@@ -25,25 +25,6 @@ class Setup extends React.Component{
             message: "Did you know ? \n The fact that you are reading this is by it self a proof that you didn't know, isn't that right?"
 
         }
-    }
-
-    /**
-     * load an image asynchronously
-     * @param {string} src: image source folder 
-     * @return {Promise}
-     */
-    asyncImageLoader( src ){
-        return new Promise( ( resolve, reject ) => {
-            const img = new Image();
-            img.onload = () => {
-                resolve(img);
-            }
-            img.onerror = ( msg ) => {
-                console.error( "cannot load resources from: "+src, msg);
-                reject(msg)
-            }
-            img.src = src;
-        })
     }
 
   /**
@@ -90,7 +71,7 @@ class Setup extends React.Component{
                 const src = flder+""+this.props.atlas+"/t"+fi+"/r"+ti+".png";
                 
                 // load image
-                this.asyncImageLoader( src )
+                asyncImageLoader( src )
                     .then( img => {
 
                         this.setImageState({
@@ -123,13 +104,11 @@ class Setup extends React.Component{
 
     componentDidMount(){
 
-        if ( !this.state.regular_images_loaded && !this.state.start_images_loaded )
-
             setTimeout( () => {
 
                 // tell user what is happening 
                 this.setState({
-                    message: "Loading required assets, please wait..."
+                    message: "'Mau' the sacred cat has ordered his slave cats to fetch for required tiles, it won't take much before they return. Please wait..."
                 })
 
                 // create Images
@@ -141,7 +120,7 @@ class Setup extends React.Component{
                         this.tilesLoader( this.state.RTM,  "./tiles/regular/", 'regular', 0, 0, () => { 
 
                             this.setState({
-                                message: "Everything is up, your majesty can proceed",
+                                message: "Cats has returned and they did a great job, Hooray.",
                                 status_pic: "success.png",
                             })
 

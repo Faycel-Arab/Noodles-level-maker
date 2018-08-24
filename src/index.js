@@ -16,7 +16,7 @@ import Setup from './template/parts/phase_03';
 import LevelProcessor from './template/parts/phase_04';
 
 // deps
-import Tiles_Map from "./functions";
+import {Tiles_Map} from "./functions";
 
 
 /**
@@ -163,7 +163,10 @@ class Main extends React.Component{
       case "Process images": 
         return(
           <LevelProcessor 
+            levelImages={this.state.Assets}
             regularTiles={this.state.comparisonImages.regular} 
+            startingTiles={this.state.comparisonImages.starting}
+            handleError={ msg => this.displayErrorBox(msg)}
           />
         );
         break;
@@ -369,8 +372,6 @@ class Main extends React.Component{
     // Please don't get confused, 'map' is an object key here. hahaha got ya right ?? 
     const SL = Tiles_Map( "starting", this.state.selectedType ).map.reduce( ( a, b ) => a + b, 0 ); 
     const RL = Tiles_Map( "regular", this.state.selectedType ).map.reduce(  ( a, b ) => a + b, 0 ); 
-
-    console.log(files);
 
     // flag 
     let flag = false;
