@@ -42,16 +42,27 @@ function asyncImageLoader( src ){
 // draw an image to canvas
 function drawToCanvas( canvas, ctx, img ){
     return new Promise( ( resolve, reject ) => {
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width  = img.width;
+        canvas.height = img.height; 
         ctx.drawImage( img, 0, 0 );
         resolve();
     })
 }
 
+/**
+ * return atlas short name, ex: ortho-grey = ortho
+ * @param {string} atlas: level atlas name
+ * @return {string} atlas short name¹
+ */
+function getAtlasShort( atlas ){
+    return atlas.substring( 0, atlas.indexOf("-") );
+
+}
+
 module.exports = {
     asyncImageLoader: asyncImageLoader,
     Tiles_Map       : Tiles_Map,
-    drawToCanvas    : drawToCanvas
+    drawToCanvas    : drawToCanvas,
+    getAtlasShort   : getAtlasShort
 }
 

@@ -164,8 +164,11 @@ class Main extends React.Component{
         return(
           <LevelProcessor 
             levelImages={this.state.Assets}
-            regularTiles={this.state.comparisonImages.regular} 
+            regularTiles={this.state.comparisonImages.regular}
             startingTiles={this.state.comparisonImages.starting}
+            atlas={this.state.selectedType}
+            cols={this.state.cols}
+            rows={this.state.rows}
             handleError={ msg => this.displayErrorBox(msg)}
           />
         );

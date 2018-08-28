@@ -132,7 +132,7 @@ class Setup extends React.Component{
                 else 
                     this.props.errorHandler("Sorry cats are unable to find a map for "+this.props.atlas+" tiles")
             
-            }, 3000);
+            }, 200);
     }
 
     render(){
