@@ -1,6 +1,7 @@
 import React from 'react';
 import Canvas from '../components/canvas';
 import {asyncImageLoader, drawToCanvas, getAtlasShort} from '../../functions';
+import {saveAs} from 'file-saver/FileSaver';
 
 
 class LevelProcessor extends React.Component{
@@ -20,6 +21,7 @@ class LevelProcessor extends React.Component{
             level_canvas_id     : "level",
             tile_canvas_id      : 'tile',
             comparison_canvas_id: "comparison", 
+            progress            : 0, 
         }
     }
 
@@ -41,13 +43,9 @@ class LevelProcessor extends React.Component{
                 return new Promise( ( resolve, reject ) => {
                     if( count < maxRecursions )
                         callback( count )
-                        .then( ( flag ) => {
-                            if( flag ){
+                        .then( () => {
                                 count = count +1;
                                 resolve( count + 1 );
-                            }
-                            else
-                                reject( true );
                         });
                     else
                         reject( false );
@@ -83,7 +81,7 @@ class LevelProcessor extends React.Component{
         return new Promise( ( resolve, reject ) => {
 
             drawToCanvas( canvas, ctx, img.image)
-            .then( () => setTimeout( () => resolve(), 1) )
+            .then( () => setTimeout( () => resolve(), 0) )
         })
     }
 
@@ -119,11 +117,11 @@ class LevelProcessor extends React.Component{
      * select and return image data from level image(canvas)
      * @param {object} canvas
      * @param {object} ctx
-     * @param {string} atlas
+     * @param {string} atlas_short: atlas short name
      * @param {integer} index: tile index
      * @return {object} imageData
      */
-    selectLevelTile( canvas, ctx, atlas, index ){
+    selectLevelTile( canvas, ctx, atlas_short, index ){
 
         // aliases 
         const cols = this.props.cols;
@@ -141,7 +139,7 @@ class LevelProcessor extends React.Component{
         // 4 edge points of tile rectangle
         let portion = {};
 
-        switch( getAtlasShort( atlas ) ){
+        switch( atlas_short ){
 
             case "ortho": 
                 portion.a = width * x + width/5;
@@ -159,94 +157,160 @@ class LevelProcessor extends React.Component{
     }
 
     /**
-     * start comparing level images to tiles
+     * detect tiles in main canvas
      * @param {object} cvs: canvases 
      * {canvas, ctx, tile canvas, tile ctx, comparison canvas, comparison ctx}
      * @param {object} images: array of HTMLImageElement
      *  (tiles images to use for comparison)
-     * @param {Boolean} stopOnFirstMatch: wether to stop on first match or not 
-     * use case : to detect a single tile only
+     * @param {string} atlas
      */
-    startComparison( cvs, images, stopOnFirstMatch = false ){
+    startComparison( cvs, regular_images, starting_images, atlas_short ){
 
         // aliases (shortcuts)
         const cols  = this.props.cols;
         const rows  = this.props.rows;
-        const atlas = this.props.atlas;
         const sf    = this.state.similarityFactor; 
 
         // tiles array 
         const tiles = [];
 
-        // store max similarity
-        // store tiles indexes with the highest similarity
-        let max_sim = 0;
-        let ti;
+        // cache var to avoid re-decalration
+        let compData;
 
         return new Promise( (resolve, reject ) => {
 
-            this.recursiveCall( cols*rows, 0, i => {
+            // first detect regular tiles 
+            this.recursiveCall( cols*rows, 0, index => {
 
-                return new Promise( (resolve, reject ) => {
+                return new Promise( ( resolve, reject ) => {
 
-                    // reset
-                    max_sim = 0;
-                    ti = null;
-
-                    // select level tile ( image data )
-                    let data = this.selectLevelTile( cvs.canvas, cvs.ctx, atlas, i );
+                    // select tile data from main canvas
+                    compData = this.selectLevelTile( cvs.canvas, cvs.ctx, atlas_short, index );
 
                     // set dimensions
-                    cvs.c_canvas.width  = data.width;
-                    cvs.c_canvas.height = data.height;
+                    cvs.c_canvas.width  = compData.width;
+                    cvs.c_canvas.height = compData.height;
 
                     // draw to comparison canvas
-                    cvs.c_ctx.putImageData( data, 0, 0 );
+                    cvs.c_ctx.putImageData( compData, 0, 0 );
 
-                    // loop throught each tile and compare
-                    this.recursiveCall( images.length, 0, index => {
+                    // perform tile detection 
+                    this.detectTile( cvs.t_canvas, cvs.t_ctx, regular_images, compData )
+                    .then( data => {
 
-                        return new Promise( ( resolve, reject ) => {
-                            
-                            // set tile image to tile canvas
-                            this.setTile( cvs.t_canvas, cvs.t_ctx, images[index] )
-                            .then( () => {
+                        // push tile data 
+                        tiles.push(data)
 
-                                // do the comparison between comparison and tile canvas
-                                // get image data from tile & comparison canvas
-
-                                // select tile image data from the center 
-                                // select exacly as much pixels as comparison image data
-                                const x  = cvs.t_canvas.width/2  - data.width/2;
-                                const y  = cvs.t_canvas.height/2 - data.height/2;
-                                const x2 = data.width;
-                                const y2 = data.height;
-                                const tileData = cvs.t_ctx.getImageData( x, y, x2, y2 );
-                                
-                                // select comparison image data
-                                const compData = cvs.c_ctx.getImageData( 0, 0, cvs.c_canvas.width, cvs.c_canvas.height );
-
-                                // compare
-                                let similarity = this.compare( tileData.data, compData.data );
-                                
-                                if( similarity > max_sim ){
-                                    max_sim = similarity;
-                                    ti = {"t":images[index].folder_index, "r":images[index].tile_index};
-                                }
-
-                                console.log( i+" : "+images[index].folder_index+" - "+images[index].tile_index, "Result: "+ similarity);
-
-                                resolve(true)
-                            })
-                        })
-                    })
-                    .then( (flag ) => {
-                        tiles.push(ti);
-                        resolve(true)
+                        resolve()
                     });
                 })
+
+            }).then( () => { // detect strating tile
+
+                let startTileIndex;
+                let startTile;
+                
+                let max_sim = 0;
+
+                this.recursiveCall( cols*rows, 0, index => {
+
+                    return new Promise( ( resolve, reject ) => {
+
+                        // select tile data from main canvas
+                        compData = this.selectLevelTile( cvs.canvas, cvs.ctx, atlas_short, index );
+
+                        // set dimensions
+                        cvs.c_canvas.width  = compData.width;
+                        cvs.c_canvas.height = compData.height;
+
+                        // draw to comparison canvas
+                        cvs.c_ctx.putImageData( compData, 0, 0 );
+
+                        // perform tile detection and return max similarity
+                        this.detectTile( cvs.t_canvas, cvs.t_ctx, starting_images, compData, true )
+                        .then( data => {
+
+                            if( data.result > max_sim ){
+                                startTileIndex = index;
+                                startTile = data.tile;
+                                max_sim = data.result;
+                            }
+                            resolve()
+                        });
+                    })
+
+                })
+                .then( () => {
+                    
+                    tiles[ startTileIndex ] = startTile;
+
+                    resolve( tiles );
+                })
+
             })
-            .then( () => resolve( tiles ) );
+        })
+    }
+
+    /**
+     * detect tile type and rotation 
+     * @param  {object}  canvas  : tile canvas 
+     * @param  {object}  ctx     : tile canvas context
+     * @param  {object}  images  : array of images HTMLImageElement (used for comparison)
+     * @param  {object}  compData: comparison image data
+     * @param  {Boolean} res     : return max sim or not default to false
+     * @return {object}  tile type and rotation object{'t','r'}
+     */
+    detectTile( canvas, ctx, images, compData, res = false ){
+
+        // tile data
+        let tile = { "t": undefined, "r": undefined };
+
+        // cache similarity var to avoid re-declaring
+        let similarity;
+
+        // store max similarity
+        let max_sim = 0;
+
+        return new Promise( (resolve, reject ) => {
+
+            this.recursiveCall(images.length, 0, index => {
+
+                return new Promise( ( resolve, reject ) => {
+
+                    // set tile image to tile canvas
+                    this.setTile( canvas, ctx, images[index] )
+                    .then( () => {
+                        
+                        // set comparison points from tile canvas
+                        // select exacly as much pixels as comparison image 
+                        const x  = canvas.width/2  - compData.width/2;
+                        const y  = canvas.height/2 - compData.height/2;
+                        const x2 = compData.width;
+                        const y2 = compData.height;
+
+                        // get tilae data
+                        const tileData = ctx.getImageData( x, y, x2, y2 );
+
+                        // compare 
+                        similarity = this.compare( tileData.data, compData.data );
+
+                        // set max sim and tile data if results are higher
+                        if( similarity > max_sim ){
+                            max_sim = similarity;
+                            tile = {"t":images[index].folder_index, "r":images[index].tile_index};
+                        }
+
+                        resolve()
+                    })
+                })
+
+            })
+            .then( () => { // resolve tile data
+                if ( res )
+                    resolve( { tile: tile, result: max_sim })
+                else
+                    resolve( tile ) 
+            }) 
         })
     }
 
@@ -262,8 +326,14 @@ class LevelProcessor extends React.Component{
         let c_canvas = document.querySelector("#"+this.state.comparison_canvas_id); 
         let c_ctx    = c_canvas.getContext('2d');
 
-        // levels tiles
+        // levels
+        // array of objects 
+        // name & content
         const levels_tiles = [];
+
+        // Aliases
+        const Atlas       = this.props.atlas;
+        const Atlas_short = getAtlasShort(Atlas); 
 
         // execute the following and catch any error
         try{
@@ -302,10 +372,11 @@ class LevelProcessor extends React.Component{
                             }
 
                             // start comparing
-                            this.startComparison( cvs, this.props.regularTiles )
+                            this.startComparison( cvs, this.props.regularTiles, this.props.startingTiles, Atlas_short )
                             // recieve tiles
                             .then( ( tiles ) => {
                                 levels_tiles.push( tiles );
+                                this.setState({ progress : index + 1})
                                 resolve(true);
                             })
                             
@@ -316,7 +387,15 @@ class LevelProcessor extends React.Component{
                 })
             })
             .then( () => {
-                console.log(levels_tiles);
+
+                this.setState({
+                    levels: levels_tiles
+                })
+
+                // download file
+                let blob = new Blob( [JSON.stringify(levels_tiles)], {type: "text/json;charset=utf-8"});
+                saveAs( blob, 'levels.json');
+
             }) 
 
         }
@@ -328,32 +407,46 @@ class LevelProcessor extends React.Component{
     
     render(){
         return(
-            <div className="level-processor">
-                <div className="left">
-                    <div className="level-canvas">
-                        <Canvas 
-                            classes="level-pic"
-                            identifier={this.state.level_canvas_id}
-                        />
+            <div className="processing">
+
+                <div className="level-processor" key={0} >
+                    <div className="left">
+                        <div className="level-canvas">
+                            <Canvas 
+                                classes="level-pic"
+                                identifier={this.state.level_canvas_id}
+                            />
+                        </div>
+                    </div>
+                                    
+                    <div className="right">
+                        <div className="tiles-canvas">
+                            <Canvas
+                                classes="tile-pic"
+                                identifier={this.state.tile_canvas_id}
+                            />
+                        </div>
+
+                        <div className="comparison-canvas">
+                            <Canvas
+                                classes="tile-pic"
+                                identifier={this.state.comparison_canvas_id}
+                            />
+                        </div>
                     </div>
                 </div>
-                                
-                <div className="right">
-                    <div className="tiles-canvas">
-                        <Canvas
-                            classes="tile-pic"
-                            identifier={this.state.tile_canvas_id}
-                        />
+
+                <div className="progress-bloc" key={1} >
+
+                    <div>
+                        <h2>Progress</h2>
+
+                        <p>{this.state.progress + " of "+this.props.levelImages.length}</p>
                     </div>
 
-                    <div className="comparison-canvas">
-                        <Canvas
-                            classes="tile-pic"
-                            identifier={this.state.comparison_canvas_id}
-                        />
-                    </div>
                 </div>
             </div>
+            
         )
     }
 }

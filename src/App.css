@@ -288,6 +288,19 @@ body{
   padding-right: 65px;
 }
 
+.processing{
+  position: relative;
+}
+
+.level-processor{
+  visibility: hidden;
+  opacity: 0;
+}
+
+.progress-bloc{
+  position: absolute;
+}
+
 /* number input base styles */
 .number-input{
   display: inline-flex;
