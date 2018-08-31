@@ -1,6 +1,12 @@
 import React from 'react';
 import Canvas from '../components/canvas';
-import {asyncImageLoader, drawToCanvas, getAtlasShort} from '../../functions';
+import {
+        asyncImageLoader,
+        drawToCanvas,
+        getAtlasShort,
+        Tiles_Map,
+        randomRotation 
+        } from '../../functions';
 import {saveAs} from 'file-saver/FileSaver';
 
 
@@ -164,7 +170,7 @@ class LevelProcessor extends React.Component{
      *  (tiles images to use for comparison)
      * @param {string} atlas
      */
-    startComparison( cvs, regular_images, starting_images, atlas_short ){
+    startComparison( cvs, regular_images, starting_images, atlas_short, atlas ){
 
         // aliases (shortcuts)
         const cols  = this.props.cols;
@@ -172,7 +178,8 @@ class LevelProcessor extends React.Component{
         const sf    = this.state.similarityFactor; 
 
         // tiles array 
-        const tiles = [];
+        const tiles = { tiles: [], start: undefined};
+        const shuffledTiles = { tiles: [], start: undefined, rm: 0};
 
         // cache var to avoid re-decalration
         let compData;
@@ -198,8 +205,15 @@ class LevelProcessor extends React.Component{
                     this.detectTile( cvs.t_canvas, cvs.t_ctx, regular_images, compData )
                     .then( data => {
 
+                        // randomly rotate tile
+                        // number of rotations available for current tile
+                        let rotations = Tiles_Map( "regular", atlas ).map[index];
+                        let randomlyRotatedTile = randomRotation( data, rotations);
+                        shuffledTiles.tiles.push( randomlyRotatedTile.tile);
+                        shuffledTiles.rm += randomlyRotatedTile.rm; 
+
                         // push tile data 
-                        tiles.push(data)
+                        tiles.tiles.push(data)
 
                         resolve()
                     });
@@ -209,6 +223,8 @@ class LevelProcessor extends React.Component{
 
                 let startTileIndex;
                 let startTile;
+
+                let startRM;
                 
                 let max_sim = 0;
 
@@ -231,9 +247,18 @@ class LevelProcessor extends React.Component{
                         .then( data => {
 
                             if( data.result > max_sim ){
+
                                 startTileIndex = index;
                                 startTile = data.tile;
                                 max_sim = data.result;
+                                
+                                // randomly rotate tile
+                                // number of rotations available for current tile
+                                let rotations = Tiles_Map( "starting", atlas ).map[index];
+                                let randomlyRotatedTile = randomRotation( data, rotations);
+                                shuffledTiles.tiles[index] =  randomlyRotatedTile.tile;
+                                startRM = randomlyRotatedTile.rm; 
+
                             }
                             resolve()
                         });
@@ -241,10 +266,13 @@ class LevelProcessor extends React.Component{
 
                 })
                 .then( () => {
-                    
-                    tiles[ startTileIndex ] = startTile;
 
-                    resolve( tiles );
+                    shuffledTiles.rm = startRM;
+                    shuffledTiles.start = startTileIndex;
+
+                    tiles.tiles[ startTileIndex ] = startTile;
+                    tiles.start = startTileIndex;
+                    resolve( { tiles: tiles, shuffledTiles: shuffledTiles} );
                 })
 
             })
@@ -330,10 +358,15 @@ class LevelProcessor extends React.Component{
         // array of objects 
         // name & content
         const levels_tiles = [];
+        const levels_shuffled_tiles = [];
 
         // Aliases
         const Atlas       = this.props.atlas;
         const Atlas_short = getAtlasShort(Atlas); 
+
+        // cahcing to avoind re-declaring
+        let level;
+        let shuffledLevel;
 
         // execute the following and catch any error
         try{
@@ -372,10 +405,34 @@ class LevelProcessor extends React.Component{
                             }
 
                             // start comparing
-                            this.startComparison( cvs, this.props.regularTiles, this.props.startingTiles, Atlas_short )
+                            this.startComparison( cvs, this.props.regularTiles, this.props.startingTiles, Atlas_short, Atlas )
                             // recieve tiles
-                            .then( ( tiles ) => {
-                                levels_tiles.push( tiles );
+                            .then( ( res ) => {
+
+                                // create a level object
+                                level={
+                                    "tile-type": Atlas_short,
+                                    "atlas"    : Atlas,
+                                    "width"    : this.props.cols,
+                                    "height"   : this.props.rows,
+                                    "tiles"    : res.tiles.tiles,
+                                    "start"    : res.tiles.start,
+                                }
+
+                                // create a chuffled level object
+                                shuffledLevel={
+                                    "tile-type": Atlas_short,
+                                    "atlas"    : Atlas,
+                                    "width"    : this.props.cols,
+                                    "height"   : this.props.rows,
+                                    "tiles"    : res.shuffledTiles.tiles,
+                                    "start"    : res.shuffledTiles.start,
+                                    "moves"    : res.shuffledTiles.mr
+                                }
+
+
+                                levels_tiles.push( level );
+                                levels_shuffled_tiles.push( shuffledLevel );
                                 this.setState({ progress : index + 1})
                                 resolve(true);
                             })
@@ -392,9 +449,26 @@ class LevelProcessor extends React.Component{
                     levels: levels_tiles
                 })
 
-                // download file
-                let blob = new Blob( [JSON.stringify(levels_tiles)], {type: "text/json;charset=utf-8"});
-                saveAs( blob, 'levels.json');
+                // caching
+                let blob;
+                let blob2;
+                let name;
+
+                // generate and download level files
+                levels_tiles.forEach( ( file, index ) => {
+
+                    // level 
+                    blob = new Blob( [JSON.stringify(file)], {type: "text/json;charset=utf-8"});
+                    name = this.props.levelImages[index].name;
+                    name = name.substring( 0, name.lastIndexOf( '.' ) ); // remove extension from original name
+                    saveAs( blob, name+'.solved.json');
+
+                    // chuffled level
+                    blob2 = new Blob( [JSON.stringify(levels_shuffled_tiles[index])], {type: "text/json;charset=utf-8"});
+                    name = this.props.levelImages[index].name;
+                    name = name.substring( 0, name.lastIndexOf( '.' ) ); // remove extension from original name
+                    saveAs( blob2, name+'.json');
+                })
 
             }) 
 

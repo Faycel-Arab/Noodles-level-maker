@@ -32,11 +32,11 @@ class Main extends React.Component{
       
       // describe level generating phases
       phases: [
-        "Assets selection", // prompt user to select and upload the level image or compressed file 
+        "Assets selection", // prompt user to select and upload the level image or compressed file
         "Parameters and configuration", // prompt user to set and configure parameters for levels generation
         "Setup", // load respective tiles images
         "Process images", // process images and generate levels files
-        "Download files", // download files for user ( single file for single image or a compressed file) 
+        "Download files", // download files for user ( single file for single image or a compressed file)
       ],
 
       // set and watch phases state 

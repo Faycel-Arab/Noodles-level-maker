@@ -9,7 +9,8 @@ module.exports = {
         contentBase: './public',
         host: '0.0.0.0',
         allowedHosts: [
-            '8080-disarmcommutingboar.cdr.co'
+            '8080-disarmcommutingboar.cdr.co',
+            '8080-joinladenmustang.cdr.co'
         ]
     },
     output: {
