@@ -132,10 +132,6 @@ class LevelProcessor extends React.Component{
         // aliases 
         const cols = this.props.cols;
         const rows = this.props.rows;
-        
-        // get tile width and height 
-        const width = canvas.width / cols;
-        const height = canvas.height / rows;
 
         // get tile x,y position
         const x = index % cols
@@ -148,6 +144,12 @@ class LevelProcessor extends React.Component{
         switch( atlas_short ){
 
             case "ortho": 
+
+                // get tile width and height 
+                const width = canvas.width / cols;
+                const height = canvas.height / rows;
+
+                // calc portion
                 portion.a = width * x + width/5;
                 portion.b = width - (width/5)*2;
                 portion.c = height * y + height/5;
@@ -155,8 +157,13 @@ class LevelProcessor extends React.Component{
                 break;
 
             case "hex":
+                // get tile width and height 
+                const width = canvas.width / cols + ( canvas.width / cols ) / 5;
+                const height = ( canvas.height / (rows*2+1) ) * 2;
+
                 // odd indexed tiles are pushed to bottom by a determined value 'topIndex' 
-                let topIndex = x !== 0 ? ( width / cols ) / 4 * x / 0;
+                let topIndex = x !== 0 ? ( width / cols ) / 4 * x : 0;
+
                 // treat even and odd tiles differently 
                 if ( x % 2 === 0 ) {
                     portion.a = width * x + width/5 - topIndex;
@@ -170,6 +177,7 @@ class LevelProcessor extends React.Component{
                     portion.c = height * y + height/5;
                     portion.d = height - (height/5)*2;
                 }
+                break;
         }
 
         // fill tile
@@ -454,6 +462,7 @@ class LevelProcessor extends React.Component{
                                 });
                                 // calc number of required moves
                                 let rm = res.shuffledTiles.reduce( ( a, cv ) => a + cv.rm, 0 );
+                                let rm_arr = Array(4).fill(0).map( ( v, i ) => v + 5*i );
                                 shuffledLevel={
                                     "tile-type": Atlas_short,
                                     "atlas"    : Atlas,
@@ -461,7 +470,7 @@ class LevelProcessor extends React.Component{
                                     "height"   : this.props.rows,
                                     "tiles"    : ta,
                                     "start"    : res.tiles.start,
-                                    "moves"    : rm
+                                    "moves"    : rm_arr
                                 }
 
 

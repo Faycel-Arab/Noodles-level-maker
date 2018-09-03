@@ -17,8 +17,8 @@ const TILES = {
             map   : [2,4,4]
         },
         "hex-dark":{
-            length: 1,
-            map   : [6]
+            length: 2,
+            map   : [0,6]
         }
     }
 }
