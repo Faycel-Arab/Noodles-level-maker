@@ -153,6 +153,23 @@ class LevelProcessor extends React.Component{
                 portion.c = height * y + height/5;
                 portion.d = height - (height/5)*2;
                 break;
+
+            case "hex":
+                // odd indexed tiles are pushed to bottom by a determined value 'topIndex' 
+                let topIndex = x !== 0 ? ( width / cols ) / 4 * x / 0;
+                // treat even and odd tiles differently 
+                if ( x % 2 === 0 ) {
+                    portion.a = width * x + width/5 - topIndex;
+                    portion.b = width - (width/5)*2;
+                    portion.c = height * y + height/5 + height / 2;
+                    portion.d = height - (height/5)*2;
+                }
+                else {
+                    portion.a = width * x + width/5 - topIndex;
+                    portion.b = width - (width/5)*2;
+                    portion.c = height * y + height/5;
+                    portion.d = height - (height/5)*2;
+                }
         }
 
         // fill tile
@@ -179,7 +196,8 @@ class LevelProcessor extends React.Component{
 
         // tiles array 
         const tiles = { tiles: [], start: undefined};
-        const shuffledTiles = { tiles: [], start: undefined, rm: 0};
+        //const shuffledTiles = { tiles: [], start: undefined, rm: 0};
+        const shuffledTiles = [];
 
         // cache var to avoid re-decalration
         let compData;
@@ -209,8 +227,11 @@ class LevelProcessor extends React.Component{
                         // number of rotations available for current tile
                         let rotations = Tiles_Map( "regular", atlas ).map[index];
                         let randomlyRotatedTile = randomRotation( data, rotations);
-                        shuffledTiles.tiles.push( randomlyRotatedTile.tile);
-                        shuffledTiles.rm += randomlyRotatedTile.rm; 
+                        
+                        shuffledTiles.push( randomlyRotatedTile );
+                        
+                        /*shuffledTiles.tiles.push( randomlyRotatedTile.tile);
+                        shuffledTiles.rm += randomlyRotatedTile.rm;*/ 
 
                         // push tile data 
                         tiles.tiles.push(data)
@@ -252,12 +273,8 @@ class LevelProcessor extends React.Component{
                                 startTile = data.tile;
                                 max_sim = data.result;
                                 
-                                // randomly rotate tile
-                                // number of rotations available for current tile
-                                let rotations = Tiles_Map( "starting", atlas ).map[index];
-                                let randomlyRotatedTile = randomRotation( data, rotations);
-                                shuffledTiles.tiles[index] =  randomlyRotatedTile.tile;
-                                startRM = randomlyRotatedTile.rm; 
+                                /*shuffledTiles.tiles[index] = randomlyRotatedTile.tile;
+                                startRM = randomlyRotatedTile.rm;*/
 
                             }
                             resolve()
@@ -267,11 +284,20 @@ class LevelProcessor extends React.Component{
                 })
                 .then( () => {
 
-                    shuffledTiles.rm = startRM;
-                    shuffledTiles.start = startTileIndex;
+                    /*shuffledTiles.rm = startRM;
+                    shuffledTiles.start = startTileIndex;*/
 
                     tiles.tiles[ startTileIndex ] = startTile;
                     tiles.start = startTileIndex;
+
+                    // randomly rotate tile
+                    // number of rotations available for current tile
+                    let rotations = Tiles_Map( "starting", atlas ).map[startTile['t']];
+                    let randomlyRotatedTile = randomRotation( startTile, rotations);
+
+                    shuffledTiles[startTileIndex].tile = randomlyRotatedTile.tile;
+                    shuffledTiles[startTileIndex].rm   = randomlyRotatedTile.rm;
+
                     resolve( { tiles: tiles, shuffledTiles: shuffledTiles} );
                 })
 
@@ -420,14 +446,22 @@ class LevelProcessor extends React.Component{
                                 }
 
                                 // create a chuffled level object
+                                // create tiles array
+                                let ta = Array(res.shuffledTiles.length).fill(0).map( (v, i) => {
+                                    return {
+                                        "t": res.shuffledTiles[i].tile['t'], "r":  res.shuffledTiles[i].tile['r']
+                                    }
+                                });
+                                // calc number of required moves
+                                let rm = res.shuffledTiles.reduce( ( a, cv ) => a + cv.rm, 0 );
                                 shuffledLevel={
                                     "tile-type": Atlas_short,
                                     "atlas"    : Atlas,
                                     "width"    : this.props.cols,
                                     "height"   : this.props.rows,
-                                    "tiles"    : res.shuffledTiles.tiles,
-                                    "start"    : res.shuffledTiles.start,
-                                    "moves"    : res.shuffledTiles.mr
+                                    "tiles"    : ta,
+                                    "start"    : res.tiles.start,
+                                    "moves"    : rm
                                 }
 
 

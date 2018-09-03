@@ -67,7 +67,7 @@ function getAtlasShort( atlas ){
  */
 function randomRotation( tile, rotations){
     
-    // generate an arrayof possible rotations
+    // generate an array of possible rotations
     let po = Array( rotations ).fill(0).map( ( v, i ) => i );
 
     // generate a a randomized rotation
