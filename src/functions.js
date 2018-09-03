@@ -4,6 +4,10 @@ const TILES = {
         "ortho-grey":{
             length: 4,
             map   : [2,4,4,4]
+        },
+        "hex-dark":{
+            length: 11,
+            map   : [3,6,6,6,6,6,6,2,6,3,6]
         }
     },
     
@@ -11,6 +15,10 @@ const TILES = {
         "ortho-grey":{
             length: 3,
             map   : [2,4,4]
+        },
+        "hex-dark":{
+            length: 1,
+            map   : [6]
         }
     }
 }
