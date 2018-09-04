@@ -61,6 +61,13 @@ class Setup extends React.Component{
         // check if folder index is valid
         if( fi < map.length ){
 
+            // if the current branch doesn't have any images just skip it
+            if ( map[fi] === 0 ){
+                ti = 0;
+                fi = fi + 1;
+                this.tilesLoader( map, fn, key, ti, fi, callback );
+            }
+
             // check if tile index is valid
             if( ti < map[fi] ){
 
@@ -81,6 +88,7 @@ class Setup extends React.Component{
                         }, key );
 
                         // if remaining tiles in the same folder
+                        
                         if( ti <  map[fi]-1 ){
                             ti = ti + 1;
                             this.tilesLoader( map, fn, key, ti, fi, callback );
@@ -113,7 +121,7 @@ class Setup extends React.Component{
 
                 // create Images
                 // starting images
-                if( this.state.STM && this.state.STM.length > 0 || 
+                if( this.state.STM && this.state.STM.length > 0 && 
                     this.state.RTM && this.state.RTM.length > 0 )
 
                     this.tilesLoader( this.state.STM,  "./tiles/starting/", 'starting', 0, 0, () => 

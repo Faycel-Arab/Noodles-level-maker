@@ -133,9 +133,13 @@ class LevelProcessor extends React.Component{
         const cols = this.props.cols;
         const rows = this.props.rows;
 
+        let width, height;
+
         // get tile x,y position
         const x = index % cols
         const y = Math.floor( index / cols );
+
+        const tol = 1;
 
         // selection protion
         // 4 edge points of tile rectangle
@@ -146,37 +150,29 @@ class LevelProcessor extends React.Component{
             case "ortho": 
 
                 // get tile width and height 
-                const width = canvas.width / cols;
-                const height = canvas.height / rows;
+                width  = canvas.width / cols;
+                height = canvas.height / rows;
 
                 // calc portion
-                portion.a = width * x + width/5;
-                portion.b = width - (width/5)*2;
-                portion.c = height * y + height/5;
-                portion.d = height - (height/5)*2;
+                portion.a = width * x + width;
+                portion.b = width - width*2;
+                portion.c = height * y + height;
+                portion.d = height - height*2;
                 break;
 
             case "hex":
                 // get tile width and height 
-                const width = canvas.width / cols + ( canvas.width / cols ) / 5;
-                const height = ( canvas.height / (rows*2+1) ) * 2;
+                width  = canvas.width / cols + ( canvas.width / cols ) / 5;
+                height = ( canvas.height / (rows*2+1) ) * 2;
 
                 // odd indexed tiles are pushed to bottom by a determined value 'topIndex' 
-                let topIndex = x !== 0 ? ( width / cols ) / 4 * x : 0;
+                let topIndex = x % 2 === 0 ? height / 2 : 0;
 
-                // treat even and odd tiles differently 
-                if ( x % 2 === 0 ) {
-                    portion.a = width * x + width/5 - topIndex;
-                    portion.b = width - (width/5)*2;
-                    portion.c = height * y + height/5 + height / 2;
-                    portion.d = height - (height/5)*2;
-                }
-                else {
-                    portion.a = width * x + width/5 - topIndex;
-                    portion.b = width - (width/5)*2;
-                    portion.c = height * y + height/5;
-                    portion.d = height - (height/5)*2;
-                }
+                portion.a = width * x - - topIndex;
+                portion.b = width - (width/cols)*2;
+                portion.c = height * y + height/rows + height / 2;
+                portion.d = height - (height/rows)*2;
+
                 break;
         }
 
@@ -248,7 +244,7 @@ class LevelProcessor extends React.Component{
                     });
                 })
 
-            }).then( () => { // detect strating tile
+            }).then( () => { // detect starting tile
 
                 let startTileIndex;
                 let startTile;
