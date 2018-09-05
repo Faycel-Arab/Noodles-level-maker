@@ -144,41 +144,65 @@ class LevelProcessor extends React.Component{
         // selection protion
         // 4 edge points of tile rectangle
         let portion = {};
+        let spacing;
 
         switch( atlas_short ){
 
             case "ortho": 
-
                 // get tile width and height 
                 width  = canvas.width / cols;
                 height = canvas.height / rows;
 
                 // calc portion
-                portion.a = width * x + width;
-                portion.b = width - width*2;
-                portion.c = height * y + height;
-                portion.d = height - height*2;
+                portion.a = width * x;
+                portion.b = width;
+                portion.c = height * y;
+                portion.d = height;
                 break;
 
             case "hex":
                 // get tile width and height 
-                width  = canvas.width / cols + ( canvas.width / cols ) / 5;
+                //width  = canvas.width / (cols - ( Math.floor( cols / 2 ) / 2 ));
+                switch ( cols ){
+
+                    case 5 :
+                        width = canvas.width / cols + ( canvas.width / cols ) / 4;
+                        spacing = 3;
+                        break;
+
+                    case 6 :
+                        width = canvas.width / cols + ( canvas.width / cols ) / 4;
+                        spacing = 2;
+                        break;
+
+                    case 7 :
+                        width = canvas.width / ( ( cols / 2 ) + ( Math.floor( (cols + 1) / 4 ) + (1/4) ) );
+                        spacing = 4.5;
+                        break;
+
+                    case 7 :
+                        width = canvas.width / ( ( cols / 2 ) + ( Math.floor( (cols + 1) / 4 ) + (1/4) ) );
+                        spacing = 1;
+                        break;
+                }
                 height = ( canvas.height / (rows*2+1) ) * 2;
 
                 // odd indexed tiles are pushed to bottom by a determined value 'topIndex' 
                 let topIndex = x % 2 === 0 ? height / 2 : 0;
 
-                portion.a = width * x - - topIndex;
-                portion.b = width - (width/cols)*2;
-                portion.c = height * y + height/rows + height / 2;
-                portion.d = height - (height/rows)*2;
+                portion.a = width * x - ( width/4 * x ) + (spacing * x);
+                portion.b = width;
+                portion.c = height * y + topIndex;
+                portion.d = height;
 
                 break;
         }
 
         // fill tile
         /*ctx.fillStyle = "rgba(0,233,47,0.3)";
-        ctx.fillRect( portion.a, portion.c, portion.b, portion.d );*/
+        ctx.fillRect( portion.a, portion.c, portion.b, portion.d );
+        ctx.rect(portion.a, portion.c, portion.b, portion.d);
+        ctx.stroke();*/
         
         return ctx.getImageData( portion.a, portion.c, portion.b, portion.d );
     }
