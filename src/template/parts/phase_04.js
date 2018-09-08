@@ -167,7 +167,7 @@ class LevelProcessor extends React.Component{
 
                     case 5 :
                         width = canvas.width / cols + ( canvas.width / cols ) / 4;
-                        spacing = 3;
+                        spacing = 2;
                         break;
 
                     case 6 :
@@ -180,7 +180,7 @@ class LevelProcessor extends React.Component{
                         spacing = 4.5;
                         break;
 
-                    case 7 :
+                    case 8 :
                         width = canvas.width / ( ( cols / 2 ) + ( Math.floor( (cols + 1) / 4 ) + (1/4) ) );
                         spacing = 1;
                         break;
