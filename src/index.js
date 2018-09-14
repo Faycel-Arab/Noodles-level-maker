@@ -14,6 +14,7 @@ import AssetsSelector from './template/parts/phase_01';
 import LevelsParameters from './template/parts/phase_02';
 import Setup from './template/parts/phase_03';
 import LevelProcessor from './template/parts/phase_04';
+import Levels_checker from './template/parts/phase_05';
 
 // deps
 import {Tiles_Map} from "./functions";
@@ -62,27 +63,29 @@ class Main extends React.Component{
       // array of objects {folder_index, tile_index, image}
       comparisonImages: {},
 
+      levels: [],   // generated levels JSON
+
       // level params
       TilesTypes: [ 
         { 
-          name: "Hexagonal Dark",
+          name     : "Hexagonal Dark",
           className: "hex-dark-bg",
-          val: "hex-dark"
+          val      : "hex-dark"
         },
         { 
-          name: "Hexagonal Yellow",
+          name     : "Hexagonal Yellow",
           className: "hex-yellow-bg",
-          val: "hex-orange"
+          val      : "hex-orange"
         },
         { 
-          name: "Orthogonal blue",
+          name     : "Orthogonal blue",
           className: "orth-blue-bg",
-          val: "ortho-grey"
+          val      : "ortho-grey"
         },
         { 
-          name: "Orthogonal Orange",
+          name     : "Orthogonal Orange",
           className: "orth-orange-bg",
-          val: "ortho-orange"
+          val      : "ortho-orange"
         },
       ],
 
@@ -98,8 +101,8 @@ class Main extends React.Component{
   /**
    * Shortcut to edit state
    * creates and modify a copy of state then affecting it to state
-   * @param {string} key : prop name to edit
-   * @param {string} val : prop value to set
+   * @param {string} key: prop name to edit
+   * @param {string} val: prop value to set
    * @return {void} 
    */
   editState( key, val ){
@@ -126,8 +129,8 @@ class Main extends React.Component{
       case "Assets selection": 
         return(
           <AssetsSelector 
-          selectedFiles={this.state.Assets}
-          onFileSelect={ ( files ) => this.setAssets(files)}/>
+          selectedFiles = {this.state.Assets}
+          onFileSelect  = { ( files ) => this.setAssets(files)}/>
         );
         break;
       
@@ -137,13 +140,13 @@ class Main extends React.Component{
         const selectedTypeIndex = this.state.TilesTypes.findIndex( type => type.val === this.state.selectedType );
         return(
           <LevelsParameters 
-            tilesTypes={this.state.TilesTypes}
-            selectedTypeIndex={selectedTypeIndex}
-            colsVal={this.state.cols}
-            rowsVal={this.state.rows}
-            setType={(val) => this.setParams( 'type', val)}
-            setCols={(n) => this.setParams( 'cols', n)}
-            setRows={(n) => this.setParams( 'rows', n)}
+            tilesTypes        = {this.state.TilesTypes}
+            selectedTypeIndex = {selectedTypeIndex}
+            colsVal           = {this.state.cols}
+            rowsVal           = {this.state.rows}
+            setType           = {(val) => this.setParams( 'type', val)}
+            setCols           = {(n) => this.setParams( 'cols', n)}
+            setRows           = {(n) => this.setParams( 'rows', n)}
           />
         );
         break;
@@ -151,11 +154,11 @@ class Main extends React.Component{
       case "Setup": 
         return(
           <Setup 
-            atlas={this.state.selectedType}
-            cols={this.state.cols}
-            rows={this.state.rows}
-            errorHandler={(msg) => this.displayErrorBox(msg)}
-            setFiles={(files) => this.setComparisonImages(files)}
+            atlas        = {this.state.selectedType}
+            cols         = {this.state.cols}
+            rows         = {this.state.rows}
+            errorHandler = {(msg) => this.displayErrorBox(msg)}
+            setFiles     = {(files) => this.setComparisonImages(files)}
           />
           );
         break;
@@ -163,19 +166,31 @@ class Main extends React.Component{
       case "Process images": 
         return(
           <LevelProcessor 
-            levelImages={this.state.Assets}
-            regularTiles={this.state.comparisonImages.regular}
-            startingTiles={this.state.comparisonImages.starting}
-            atlas={this.state.selectedType}
-            cols={this.state.cols}
-            rows={this.state.rows}
-            handleError={ msg => this.displayErrorBox(msg)}
+            levelImages   = {this.state.Assets}
+            regularTiles  = {this.state.comparisonImages.regular}
+            startingTiles = {this.state.comparisonImages.starting}
+            atlas         = {this.state.selectedType}
+            cols          = {this.state.cols}
+            rows          = {this.state.rows}
+            setLevels     = { levels => this.setLevels(levels)}
+            handleError   = { msg => this.displayErrorBox(msg)}
           />
         );
         break;
       
       case "Download files": 
-        return(<h2>Download files</h2>);
+        return(
+          <Levels_checker 
+            levelImages   = {this.state.Assets}
+            levels        = {this.state.levels}
+            regularTiles  = {this.state.comparisonImages.regular}
+            startingTiles = {this.state.comparisonImages.starting}
+            atlas         = {this.state.selectedType}
+            cols          = {this.state.cols}
+            rows          = {this.state.rows}
+            handleError   = { msg => this.displayErrorBox(msg)}
+          />
+        );
         break;
 
       default: 
@@ -208,7 +223,7 @@ class Main extends React.Component{
   /**
    * set Notifications state content and display
    * @param {string} content: error message
-   * @return {function} : component
+   * @return {function}     : component
    */
   displayErrorBox( content ){
     // we do a manual edit to state since Notifications
@@ -290,8 +305,8 @@ class Main extends React.Component{
         this.editState( "Assets", files );
 
         // get and edit phases state
-        let phasesState = this.state.phasesState;
-            phasesState[ this.state.currentPhase ] = true;
+        let         phasesState                = this.state.phasesState;
+        phasesState[ this.state.currentPhase ] = true;
         this.editState( "phasesState", phasesState );
 
         // hide ErrorBox in case it's visible
@@ -345,18 +360,18 @@ class Main extends React.Component{
 
     // set current phase to true 
     // if 'type', 'cols' and 'rows' are set 
-    const selectedType = this.state.selectedType; 
-    const cols = this.state.cols;
-    const rows = this.state.rows; 
+    const selectedType = this.state.selectedType;
+    const cols         = this.state.cols;
+    const rows         = this.state.rows;
     if( selectedType && cols && rows ){
-      let clone = this.state;
+      let               clone                    = this.state;
       clone.phasesState[this.state.currentPhase] = true;
       this.setState(clone);
     }
     
     // otherwise set to false
     else{
-      let clone = this.state;
+      let               clone                    = this.state;
       clone.phasesState[this.state.currentPhase] = false;
       this.setState(clone);
     } 
@@ -365,7 +380,7 @@ class Main extends React.Component{
 
   /**
    * set state.comparisonImages
-   * @param {object} files : array to store comparison images
+   * @param {object} files: array to store comparison images
    * must conform to this.state.comparisonImages hierarchy 
    * array of objects {folder_index, tile_index, image}
    */
@@ -373,8 +388,8 @@ class Main extends React.Component{
 
     // starting and regular tiles map lengths
     // Please don't get confused, 'map' is an object key here. hahaha got ya right ?? 
-    const SL = Tiles_Map( "starting", this.state.selectedType ).map.reduce( ( a, b ) => a + b, 0 ); 
-    const RL = Tiles_Map( "regular", this.state.selectedType ).map.reduce(  ( a, b ) => a + b, 0 ); 
+    const SL = Tiles_Map( "starting", this.state.selectedType ).map.reduce( ( a, b ) => a + b, 0 );
+    const RL = Tiles_Map( "regular", this.state.selectedType ).map.reduce(  ( a, b ) => a + b, 0 );
 
     // flag 
     let flag = false;
@@ -404,7 +419,7 @@ class Main extends React.Component{
 
               flag = true;
 
-              // throw an expection to break out of loop 
+              // throw an exception to break out of loop 
               // TODO: check for better solution
               throw "invalid image"; 
             }
@@ -425,7 +440,6 @@ class Main extends React.Component{
       // check regular tiles 
       try {
 
-        
         files.regular.forEach( file => {
 
           if( typeof file !== "object" || 
@@ -436,7 +450,7 @@ class Main extends React.Component{
 
               flag = true;
 
-              // throw an expection to break out of loop 
+              // throw an exception to break out of loop 
               // TODO: check for better solution
               throw file; 
             }
@@ -456,8 +470,8 @@ class Main extends React.Component{
 
       // if all OK edit state
       if( !flag ){
-        let clone = this.state;
-        clone.comparisonImages = files;
+        let               clone                      = this.state;
+                          clone.comparisonImages     = files;
         clone.phasesState[ this.state.currentPhase ] = true;
 
         this.setState( clone );
@@ -465,7 +479,24 @@ class Main extends React.Component{
     }
 
     else
-      this.displayErrorBox( "Seems like cats ate some of the tiles. \n unfortunatly" );;
+      this.displayErrorBox( "Seems like cats ate some of the tiles. \n unfortunately" );;
+  }
+
+  /**
+   * set levels state
+   * @param {array} levels
+   * @memberof Main
+   */
+  setLevels( levels ){
+    let ps                        = this.state.phasesState;
+    ps  [this.state.currentPhase] = true;
+    this.setState({
+      levels     : levels,
+      phasesState: ps
+    })
+
+    // enable next button
+    
   }
 
   render(){
@@ -480,30 +511,30 @@ class Main extends React.Component{
 
           { phase !== 0 ?
               <PhaseButton 
-                text="Previous"
-                enabled={true} 
-                position="left"
-                clickEvent={this.goToPrevPhase.bind(this)}
+                text       = "Previous"
+                enabled    = {true}
+                position   = "left"
+                clickEvent = {this.goToPrevPhase.bind(this)}
               />
-            :
+            : 
               ""
           }
 
           { phase !== this.state.phases.length -1 ?
               <PhaseButton 
-                text="Next"
-                position="right"
-                enabled={this.state.phasesState[phase]} 
-                clickEvent={this.goToNextPhase.bind(this)}
+                text       = "Next"
+                position   = "right"
+                enabled    = {this.state.phasesState[phase]}
+                clickEvent = {this.goToNextPhase.bind(this)}
               />
-            :
+            : 
               ""
           }
         </div>
         
         {this.state.Notifications.display 
           ? this.showErrorComponent()
-          : ""
+          :                                                                       ""
         }
         
       </div>
@@ -513,8 +544,8 @@ class Main extends React.Component{
 
 const PhaseButton = ( props ) => ( 
     <div 
-      onClick={props.clickEvent} 
-      className={"btn btn-green " + (props.position) + (props.enabled ? " " : " btn-disabled")}>
+      onClick   = {props.clickEvent}
+      className = {"btn btn-green " + (props.position) + (props.enabled ? " " : " btn-disabled")}>
       {props.text}
     </div>
 )
@@ -523,8 +554,8 @@ const ErrorBox = ( props ) => (
   <div className="error-box">
     <div className="box-header">
       <a href="#" 
-        onClick={props.closeEvent} 
-        className="close-button"></a> 
+        onClick   = {props.closeEvent}
+        className = "close-button"></a>
     </div>
 
     <div className="box-content">
@@ -542,8 +573,7 @@ const App = () => (
   </div>
 )
 
-// This demo uses a HashRouter instead of BrowserRouter
-// because there is no server to match URLs
+
 ReactDOM.render((
   <App />
 ), document.getElementById('root'))

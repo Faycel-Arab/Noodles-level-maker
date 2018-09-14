@@ -29,7 +29,7 @@ class Setup extends React.Component{
 
   /**
    * push a new object state.images
-   * @param {object} obj : {folder_index, tile_index, image}
+   * @param {object} obj: {folder_index, tile_index, image}
    */
     setImageState( obj, key ){
 
@@ -54,8 +54,8 @@ class Setup extends React.Component{
     tilesLoader( map, folderName, key, tileIndex = 0, folderIndex = 0, callback ){
 
         // aliases
-        let fi = folderIndex;
-        let ti = tileIndex;
+        let   fi = folderIndex;
+        let   ti = tileIndex;
         const fn = folderName;
 
         // check if folder index is valid
@@ -83,8 +83,8 @@ class Setup extends React.Component{
 
                         this.setImageState({
                             folder_index: fi,
-                            tile_index: ti,
-                            image: img
+                            tile_index  : ti,
+                            image       : img
                         }, key );
 
                         // if remaining tiles in the same folder
@@ -128,7 +128,7 @@ class Setup extends React.Component{
                         this.tilesLoader( this.state.RTM,  "./tiles/regular/", 'regular', 0, 0, () => { 
 
                             this.setState({
-                                message: "Cats has returned and they did a great job, Hooray.",
+                                message   : "Cats has returned and they did a great job, Hooray.",
                                 status_pic: "success.png",
                             })
 
