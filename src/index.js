@@ -5,6 +5,10 @@
 import React from "react";
 import ReactDOM from "react-dom";
 
+// react confirm component
+import { confirmAlert } from 'react-confirm-alert';
+import 'react-confirm-alert/src/react-confirm-alert.css';
+
 // STYLES
 import css from './App.css';
 
@@ -17,7 +21,7 @@ import LevelProcessor from './template/parts/phase_04';
 import Levels_checker from './template/parts/phase_05';
 
 // deps
-import {Tiles_Map} from "./functions";
+import {Tiles_Map, getAtlasShort} from "./functions";
 
 
 /**
@@ -96,6 +100,7 @@ class Main extends React.Component{
       },
 
     }
+
   }
 
   /**
@@ -179,16 +184,20 @@ class Main extends React.Component{
         break;
       
       case "Download files": 
+        const type          = getAtlasShort(this.state.selectedType);
+        const startingTiles = type === "hex" ? this.state.comparisonImages.trans_hex_starting : this.state.comparisonImages.starting;
+        const regularTiles  = type === "hex" ? this.state.comparisonImages.trans_hex_regular : this.state.comparisonImages.regular;
         return(
           <Levels_checker 
             levelImages   = {this.state.Assets}
             levels        = {this.state.levels}
-            regularTiles  = {this.state.comparisonImages.regular}
-            startingTiles = {this.state.comparisonImages.starting}
+            regularTiles  = {regularTiles}
+            startingTiles = {startingTiles}
             atlas         = {this.state.selectedType}
             cols          = {this.state.cols}
             rows          = {this.state.rows}
             handleError   = { msg => this.displayErrorBox(msg)}
+            onRef         = {ref => (this.child = ref)}
           />
         );
         break;
@@ -499,17 +508,46 @@ class Main extends React.Component{
     
   }
 
+  confirmAndDownload(){
+
+    confirmAlert({
+        title  : 'Confirm and download',
+        message: 'This is a permanent desicion, you are asked to choose wisely',
+        buttons: [
+          {
+            label  : 'Yes, i\'m certain ',
+            onClick: () => this.child.downloadLevels()
+          },
+          {
+            label  : 'Let me think',
+            onClick: () => false
+          }
+        ]
+      })
+  }
+
+
+
   render(){
 
     let phase = this.state.currentPhase;
     
     return(
       <div id="content">
+
+        {phase === 4 ?
+              <div className="download" onClick={this.confirmAndDownload.bind(this)}>
+                Download
+              </div> 
+            : 
+              ""
+        }
+
         { this.renderPhase(phase) }
 
         <div className="footer">
 
-          { phase !== 0 ?
+          { phase !== 0  && phase !== this.state.phases.length - 1 ?
               <PhaseButton 
                 text       = "Previous"
                 enabled    = {true}
@@ -520,7 +558,7 @@ class Main extends React.Component{
               ""
           }
 
-          { phase !== this.state.phases.length -1 ?
+          { phase !== this.state.phases.length - 1 ?
               <PhaseButton 
                 text       = "Next"
                 position   = "right"
@@ -534,7 +572,7 @@ class Main extends React.Component{
         
         {this.state.Notifications.display 
           ? this.showErrorComponent()
-          :                                                                       ""
+          :                                                                           ""
         }
         
       </div>

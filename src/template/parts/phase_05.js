@@ -1,14 +1,13 @@
 import React from 'react';
 import TilesTable from '../components/tiles-table';
 import {
-        asyncImageLoader,
-        drawToCanvas,
-        getAtlasShort,
-        Tiles_Map,
-        randomRotation,
         highlightTile,
         mouseRelativePos,
-        loadImagesFromFileList 
+        loadImagesFromFileList,
+        whichArrow,
+        getAtlasShort,
+        randomRotation,
+        Tiles_Map
         } from '../../functions';
 import {saveAs} from 'file-saver/FileSaver';
 
@@ -32,7 +31,7 @@ class Levels_checker extends React.Component{
 
             board_width: 450,   // canvases default width
 
-            selectedIndex: undefined,   // index of selected tile
+            selectedIndex: 0,   // index of selected tile
 
             // UI
             selectedTile: undefined,
@@ -78,7 +77,6 @@ class Levels_checker extends React.Component{
         const img = this.state.images[index].image;
 
         ctx.drawImage( img, 0, 0, img.width, img.height, 0, 0, canvas.width, canvas.height );
-        
     }
 
     /**
@@ -103,19 +101,9 @@ class Levels_checker extends React.Component{
                 break;
 
             case "hex": 
-                switch(cols){
-                    
-                    case 5 || 6: 
-                        dimensions = width / cols + ( width / cols )/4
-                        break;
-                        
-                    case 7 || 8: 
-                        dimensions = width / cols
-                        + ( (cols/2)
-                        + ( Math.floor((cols+1)/4) + (1/4))
-                        )
-                        break;
-                }
+                 dimensions = width / cols + ( width / cols )/4;
+                 break;
+
         }
 
         return dimensions
@@ -136,7 +124,7 @@ class Levels_checker extends React.Component{
         const ctx    = canvas.getContext('2d')
 
         // get tile position 
-        const position = this.getTilePosition( i, cols )
+        const position = this.getXyFromIndex( i, cols )
 
         // get tile dimensions
         const dimensions = this.getTileDimensions( type, cols )
@@ -169,18 +157,17 @@ class Levels_checker extends React.Component{
             case "ortho": 
                 x = dimensions * position.x;
                 y = dimensions * position.y;
-                ctx.drawImage( img, 0, 0, img.width, img.height, x, y, dimensions, dimensions );
+                ctx.drawImage( img, 0, 0, img.width, img.height, x+4, y+4, dimensions-4, dimensions-4 );
                 break;
 
             case  "hex"                                        : 
             const topIndex = position.x% 2 ===0 ?dimensions / 2: 0;
                 x = dimensions *position.x - ( dimensions/4 * position.x)
                 y = dimensions *position.y +topIndex
-                ctx.drawImage( img, 0, 0, img.width, img.height, x, y, dimensions, dimensions );
-                ctx.rect( x, y, dimensions, dimensions )
-                ctx.stroke()
+                ctx.drawImage( img, 0, 0, img.width, img.height, x+4, y+4, dimensions-4, dimensions-4 );
                 break;
         }
+
     }
 
     /**
@@ -191,13 +178,50 @@ class Levels_checker extends React.Component{
      * @returns {object} x,y position
      * @memberof Levels_checker
      */
-    getTilePosition( index, cols ){
+    getXyFromIndex( index, cols ){
         
         return {
             x: index % cols,
             y: Math.floor( index / cols )
         }
     }
+
+    getIndexFromXy( x, y, cols ){
+        
+        return y*cols + x;
+    }
+
+    fakeMousePos( x, y, cols, rows, type ){
+
+        // tile dimension
+        const dim = this.getTileDimensions( type, cols);
+
+        let mousePos = {
+            x: undefined,
+            y: undefined
+        }
+
+        if( type === "hex"){
+
+            const topIndex  = x % 2 === 0 ? dim / 2 : 0;
+            const leftIndex = dim/4 * (x-1) - 1;
+
+            mousePos.x = x * dim - leftIndex ;
+            mousePos.y = y * dim + topIndex;
+            
+        }
+
+        else{
+
+            mousePos.x = x/cols * (cols*dim);
+            mousePos.y = y/rows * (rows*dim);
+        }
+
+        console.log( mousePos )
+
+        return mousePos;
+    }
+
 
     /**
      *  draw level tiles
@@ -206,6 +230,10 @@ class Levels_checker extends React.Component{
         
         const level = this.state.levels[this.state.index];
 
+        // create canvas ref
+        const canvas = document.querySelector("#generated_level");
+        const ctx    = canvas.getContext('2d');
+
         // get params from level 
         const cols  = level.width;
         const type  = level["tile-type"];
@@ -213,6 +241,12 @@ class Levels_checker extends React.Component{
 
         // caching
         let flag = "regular";
+
+        // apply a white background
+        ctx.beginPath();
+        ctx.rect(0, 0, canvas.width, canvas.height );
+        ctx.fillStyle = "white";
+        ctx.fill();
 
         // start drawing
         tiles.forEach( ( tile, i ) => {
@@ -282,13 +316,11 @@ class Levels_checker extends React.Component{
         // quick refs
         const index = this.state.index;
         const cols  = this.state.levels[index].width;
+        const rows  = this.state.levels[index].height;
         const type  = this.state.levels[index]["tile-type"];
 
         // get tile dimensions
         const dimensions = this.getTileDimensions( type, cols );
-
-        // get clicked tile position 
-        const pos = this.getTilePosition( this.state.selectedIndex, cols);
 
         // calc tile x,y position from mouse coords
         let x,y; 
@@ -296,19 +328,19 @@ class Levels_checker extends React.Component{
         switch(type){
             
             case "ortho": 
-                x = Math.floor(mousePos.x / dimensions);
-                y = Math.floor(mousePos.y / dimensions);
+                x = Math.floor(mousePos.x / (cols*dimensions) * cols);
+                y = Math.floor(mousePos.y / (rows*dimensions) * rows);
                 break;
 
             case "hex": 
-                x = Math.floor(mousePos.x / dimensions);
-                y = Math.floor(mousePos.y / dimensions);
+                x = mousePos.x <= dimensions ? 0 : Math.floor((mousePos.x - dimensions) / (dimensions/4*3) + 1);
+                y = Math.floor( mousePos.y / (rows*dimensions) * rows );
                 break;
         }
 
         if( type === "hex"){
-            const topIndex = dimensions / 2;
-            if( x % 2 === 0 && mousePos.y >  topIndex || x % 2 !== 0 ){
+            const topIndex = x % 2 === 0 ? dimensions / 2 : 0;
+            if( mousePos.y >= topIndex ){
                  // highlight the same pos in level and generated image
                 highlightTile( ctx2, dimensions, x, y, type);
                 highlightTile( ctx, dimensions, x, y, type);
@@ -337,7 +369,7 @@ class Levels_checker extends React.Component{
 
         let newTile = (selectedType === "regular")
             ? this.state.regular_tiles[tileIndex]
-            :                                      this.state.starting_tiles[tileIndex]
+            :                                                                                                           this.state.starting_tiles[tileIndex]
 
         level.tiles[ this.state.selectedIndex ] = { t: newTile.folder_index, r: newTile.tile_index}
 
@@ -348,6 +380,86 @@ class Levels_checker extends React.Component{
             levels      : levels,
             displayTable: false
         })
+    }
+
+    /**
+     * @param {*} e: event
+     * @memberof Levels_checker
+     */
+    handleKeyPress(e){
+
+        e.preventDefault();
+
+        // accepted keys
+        let keys = [ 37, 38, 39, 40 ]
+    
+        // clicked key code
+        let keyCode = e.keyCode;
+        // proceed only if an arrows key is clicked
+        if( keys.includes( keyCode ) ){
+
+            const index = this.state.index;
+
+            // quick refs
+            const cols          = this.state.levels[index].width;
+            const rows          = this.state.levels[index].height;
+            let   selectedIndex = this.state.selectedIndex;
+            let   xyPos         = this.getXyFromIndex( selectedIndex, cols );
+            const type          = this.state.levels[index]["tile-type"];
+           
+            // clicked arrow 
+            let arrow = whichArrow( keyCode);
+
+            // starting or regular
+            let tileType;
+
+            // we fake a correspondent mouse position
+            let mousePos;
+
+            if( arrow && typeof arrow === "string" ){
+
+                switch( arrow ){
+
+                    case    "LEFT"                     : 
+                    xyPos.x = xyPos.x > 0 ? xyPos.x - 1: cols-1;
+                        break;
+
+                    case "RIGHT": 
+                        xyPos.x = xyPos.x < cols-1 ? xyPos.x + 1 : 0; 
+                        break;
+
+                    case    "UP"                       : 
+                    xyPos.y = xyPos.y > 0 ? xyPos.y - 1: rows-1;
+                        break;
+
+                    case "DOWN": 
+                        xyPos.y = xyPos.y < rows-1 ? xyPos.y + 1 : 0; 
+                        break;
+                }
+
+                // set new index
+                selectedIndex = this.getIndexFromXy( xyPos.x, xyPos.y, cols);
+
+                // tile type
+                tileType = (this.state.levels[index].start === selectedIndex)
+                        ? "starting": "regular";
+
+                // fake a mouse position using new x and y
+                mousePos = this.fakeMousePos(xyPos.x,xyPos.y,cols,rows,type);
+
+                // set state
+                this.setState({
+                    selectedTile    : mousePos,
+                    selectedIndex   : selectedIndex,
+                    selectedTileType: tileType,
+                    displayTable    : true
+                })
+            }
+
+        }
+
+
+        
     }
 
     /**
@@ -366,21 +478,49 @@ class Levels_checker extends React.Component{
         const type  = this.state.levels[index]["tile-type"];
 
         // get tile dimensions
-        const dimensions = this.getTileDimensions( type, cols );
-        console.log(dimensions);
+        let d = this.getTileDimensions( type, cols );
 
-        // calc tile x,y position from mouse coords
-        const x = Math.floor(mousePos.x / dimensions);
-        const y = Math.floor(mousePos.y / dimensions);
+        if( type === "ortho" ){
 
-        // calc tile index from x,y pos
-        const tileIndex = cols * y + x
-        const tileType  = (this.state.levels[index].start === tileIndex)
-                             ? "starting": "regular";
+            let x = Math.floor(mousePos.x / (cols*d) * cols);
+            let y = Math.floor(mousePos.y / (rows*d) * rows);
 
-        if( type === "hex"){
-            const topIndex = dimensions/2;
-            if( mousePos.y > topIndex )
+            // calc tile index from x,y pos
+            let tileIndex = cols * y + x;
+            let tileType  = (this.state.levels[index].start === tileIndex)
+                                ? "starting": "regular";
+
+            this.setState({
+                selectedTile    : mousePos,
+                selectedIndex   : tileIndex,
+                selectedTileType: tileType,
+                displayTable    : true
+            })
+        }
+
+        else if( type === "hex" ){
+
+            // calc tile x,y position from mouse coords
+            let x = mousePos.x <= d ? 0 : Math.floor((mousePos.x - d) / (d/4*3) + 1);
+            let y = Math.floor( mousePos.y / (rows*d) * rows );
+
+            // calc tile index from x,y pos
+            let tileIndex = cols * y + x;
+            let tileType  = (this.state.levels[index].start === tileIndex)
+                                    ?     "starting"                  : "regular";
+                                    const topIndex = x % 2 === 0 ? d/2: 0;
+
+            if( x % 2 === 0 && mousePos.y >= topIndex ){
+                this.setState({
+                    selectedTile    : mousePos,
+                    selectedIndex   : tileIndex,
+                    selectedTileType: tileType,
+                    displayTable    : true
+                })
+                
+            }
+
+            else 
                 this.setState({
                     selectedTile    : mousePos,
                     selectedIndex   : tileIndex,
@@ -389,17 +529,54 @@ class Levels_checker extends React.Component{
                 })
         }
 
-        else 
-            this.setState({
-                selectedTile    : mousePos,
-                selectedIndex   : tileIndex,
-                selectedTileType: tileType,
-                displayTable    : true
+    }
+
+    downloadLevels(){
+
+        let blob;
+
+        let type = this.props.atlas;
+
+        let stars_offset = 7;
+
+        let stars;
+        
+        // generate and download level files
+        this.state.levels.forEach( ( file, index ) => {
+
+            // shuffle level
+            let tiles = file.tiles;
+            let rotations;
+            let newTile; 
+            let rm = 0;
+
+            tiles.forEach( ( tile, i ) => {
+                rotations = Tiles_Map( "regular", type ).map[tile.t];
+                newTile = randomRotation( tile,  rotations )
+
+                file.tiles[i] = newTile.tile;
+                rm = rm + newTile.rm; 
             })
 
+            // calc stars 
+            stars = Array(4).fill(0).map( (v,i) => rm+stars_offset*i);
+
+            file.moves = stars;
+
+            // level 
+            blob = new Blob( [JSON.stringify(file)], {type: "text/json;charset=utf-8"});
+            name = this.state.images[index].name;
+            name = name.substring( 0, name.lastIndexOf( '.' ) );                          // remove extension from original name
+            
+            saveAs( blob, name+'.json');
+
+        })
     }
 
     componentDidMount(){
+
+        // set refs
+        this.props.onRef(this)
 
         // load level images
         loadImagesFromFileList( this.props.levelImages )
@@ -452,10 +629,14 @@ class Levels_checker extends React.Component{
                     selectHandler = {( tile ) => this.setNewTile(tile)}
                 />
             </div>: 
-            "";
+            <div></div>;
         
         return(
-            <div id="level-checker">
+            <div 
+                id        = "level-checker"
+                onKeyDown = {this.handleKeyPress.bind(this)}
+                tabIndex  = {0}
+            >
 
                 <canvas
                     ref       = "canvas"
@@ -493,8 +674,9 @@ class Levels_checker extends React.Component{
                             <i></i>
                         </span>
                     </div>  
-
+                    
                     {tilesTable}
+
                 </div>
             </div>
         )

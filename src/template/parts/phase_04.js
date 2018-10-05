@@ -538,20 +538,10 @@ class LevelProcessor extends React.Component{
 
                 // generate and download level files
                 levels_tiles.forEach( ( file, index ) => {
-
-                    // level 
-                    blob = new Blob( [JSON.stringify(file)], {type: "text/json;charset=utf-8"});
-                    name = this.props.levelImages[index].name;
-                    name = name.substring( 0, name.lastIndexOf( '.' ) );                          // remove extension from original name
                     //saveAs( blob, name+'.solved.json');
 
                     lvls.push( file ); 
 
-                    // shuffled level
-                    blob2 = new Blob( [JSON.stringify(levels_shuffled_tiles[index])], {type: "text/json;charset=utf-8"});
-                    name  = this.props.levelImages[index].name;
-                    name  = name.substring( 0, name.lastIndexOf( '.' ) );                                                  // remove extension from original name
-                    //saveAs( blob2, name+'.json');
                 })
 
                 this.props.setLevels( lvls )

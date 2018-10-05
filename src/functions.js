@@ -2,10 +2,18 @@ const TILES = {
 
     "regular":{
         "ortho-grey":{
-            length: 4,
-            map   : [2,4,4,4]
+            length: 5,
+            map   : [2,4,4,4,4]
+        },
+        "ortho-orange":{
+            length: 5,
+            map   : [2,4,4,4,4]
         },
         "hex-dark":{
+            length: 11,
+            map   : [3,6,6,6,6,6,6,2,6,3,6]
+        },
+        "hex-orange":{
             length: 11,
             map   : [3,6,6,6,6,6,6,2,6,3,6]
         }
@@ -13,10 +21,18 @@ const TILES = {
     
     "starting":{
         "ortho-grey":{
-            length: 3,
-            map   : [2,4,4]
+            length: 5,
+            map   : [2,4,0,0,4]
+        },
+        "ortho-orange":{
+            length: 5,
+            map   : [2,4,0,0,4]
         },
         "hex-dark":{
+            length: 2,
+            map   : [0,6]
+        },
+        "hex-orange":{
             length: 2,
             map   : [0,6]
         }
@@ -171,10 +187,10 @@ function highlightTile( ctx, dimensions, x, y, type = "ortho"){
         topIndex = dimensions/2
 
     if( type === "hex" && x > 0)
-        leftIndex = dimensions / 4;
+        leftIndex = ( dimensions/4 * x);
 
     // set x,y position for highlighting
-    const xPos = dimensions * x - ( dimensions/4 * x);
+    const xPos = dimensions * x - leftIndex;
     const yPos = dimensions * y + topIndex;
 
     // fill tile
@@ -250,6 +266,37 @@ function formatTime(ms){
     return hh+":"+mm+":"+ss+":"+re
 }
 
+function whichArrow( keyCode ){
+
+    let arrow;
+
+    switch( keyCode ){
+
+        case 37: 
+            arrow = "LEFT";
+            break;
+
+        case 38: 
+            arrow = "UP";
+            break;
+        
+        case 39: 
+            arrow = "RIGHT";
+            break;
+            
+        case 40: 
+            arrow = "DOWN";
+            break;
+
+        default: 
+            arrow = undefined;
+            break;
+    }
+
+    return arrow;
+}
+
+
 module.exports = {
     asyncImageLoader      : asyncImageLoader,
     Tiles_Map             : Tiles_Map,
@@ -259,7 +306,8 @@ module.exports = {
     highlightTile         : highlightTile,
     mouseRelativePos      : mouseRelativePos,
     loadImagesFromFileList: loadImagesFromFileList,
-    formatTime            : formatTime
+    formatTime            : formatTime,
+    whichArrow            : whichArrow  
 }
 
 

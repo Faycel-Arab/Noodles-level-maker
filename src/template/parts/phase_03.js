@@ -1,6 +1,6 @@
 import React from 'react';
 
-import {Tiles_Map, asyncImageLoader} from '../../functions';
+import {Tiles_Map, asyncImageLoader, getAtlasShort} from '../../functions';
 
 class Setup extends React.Component{
 
@@ -10,7 +10,7 @@ class Setup extends React.Component{
         this.state = {
 
             // images
-            images: { starting: [], regular: [] },
+            images: { starting: [], regular: [], trans_hex_starting: [], trans_hex_regular: [] },
 
             // starting tiles map 
             STM: Tiles_Map( "starting", this.props.atlas ).map,
@@ -46,12 +46,13 @@ class Setup extends React.Component{
      * load tiles images
      * @param {array} map 
      * @param {string} folderName 
-     * @param {strig} key
+     * @param {string} key
      * @param {integer} tileIndex 
      * @param {integer} folderIndex 
      * @param {function} callback 
+     * @param {boolean} simpleFolder
      */
-    tilesLoader( map, folderName, key, tileIndex = 0, folderIndex = 0, callback ){
+    tilesLoader( map, folderName, key, tileIndex = 0, folderIndex = 0, callback, simpleFolder = false){
 
         // aliases
         let   fi = folderIndex;
@@ -62,20 +63,26 @@ class Setup extends React.Component{
         if( fi < map.length ){
 
             // if the current branch doesn't have any images just skip it
-            if ( map[fi] === 0 ){
+            while ( map[fi] === 0 ){
                 ti = 0;
                 fi = fi + 1;
-                this.tilesLoader( map, fn, key, ti, fi, callback );
             }
 
             // check if tile index is valid
             if( ti < map[fi] ){
 
-                // set folder
-                let flder = folderName+""+this.props.cols+"x"+this.props.rows+"/";
+                let src;
 
-                // set image src
-                const src = flder+""+this.props.atlas+"/t"+fi+"/r"+ti+".png";
+                if( simpleFolder )
+                    src = folderName+"t"+fi+"/r"+ti+".png";
+                
+                else{
+                    // set folder
+                    let flder = folderName+""+this.props.cols+"x"+this.props.rows+"/";
+
+                    // set image src
+                    src = flder+""+this.props.atlas+"/t"+fi+"/r"+ti+".png";
+                }
                 
                 // load image
                 asyncImageLoader( src )
@@ -91,13 +98,13 @@ class Setup extends React.Component{
                         
                         if( ti <  map[fi]-1 ){
                             ti = ti + 1;
-                            this.tilesLoader( map, fn, key, ti, fi, callback );
+                            this.tilesLoader( map, fn, key, ti, fi, callback, simpleFolder );
                         }
 
                         else if( fi < map.length-1 ){
                             ti = 0;
                             fi = fi + 1;
-                            this.tilesLoader( map, fn, key, ti, fi, callback );
+                            this.tilesLoader( map, fn, key, ti, fi, callback, simpleFolder );
                         }
 
                         else
@@ -127,13 +134,34 @@ class Setup extends React.Component{
                     this.tilesLoader( this.state.STM,  "./tiles/starting/", 'starting', 0, 0, () => 
                         this.tilesLoader( this.state.RTM,  "./tiles/regular/", 'regular', 0, 0, () => { 
 
-                            this.setState({
-                                message   : "Cats has returned and they did a great job, Hooray.",
-                                status_pic: "success.png",
-                            })
+                            // load transparent edge hex images
+                            if( getAtlasShort(this.props.atlas) === "hex" ){
 
-                            // set files on parent component {Main}
-                            this.props.setFiles( this.state.images )
+                                
+                                this.tilesLoader( this.state.STM, "./trans-hex/starting/", "trans_hex_starting", 0, 0, () => {
+                                    this.tilesLoader( this.state.RTM, "./trans-hex/regular/", "trans_hex_regular", 0, 0, () => {
+                                        this.setState({
+                                            message   : "Cats has returned and they did a great job, Hooray.",
+                                            status_pic: "success.png",
+                                        })
+            
+                                        // set files on parent component {Main}
+                                        this.props.setFiles( this.state.images )
+                                    }, true)
+                                }, true)
+
+                            }
+
+                            else{
+                                this.setState({
+                                    message   : "Cats has returned and they did a great job, Hooray.",
+                                    status_pic: "success.png",
+                                })
+    
+                                // set files on parent component {Main}
+                                this.props.setFiles( this.state.images )
+                            } 
+
                         })
                     )
 

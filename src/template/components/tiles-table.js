@@ -31,7 +31,7 @@ class TilesTable extends React.Component{
     let elmnts = [];
     
     if( typeof selectedTileIndex !== "number"){
-      let c = 0;
+      let c = tiles[0].folder_index;
       tiles.map( ( tile, index ) => {
         
         if( tile.tile_index === 0 ){
@@ -57,7 +57,7 @@ class TilesTable extends React.Component{
       })
 
       elmnts.push(
-        <span key="return" onClick={this.back.bind(this)}>
+        <span key="return" className="back" onClick={this.back.bind(this)}>
           <a href="#">
             Back
           </a>
