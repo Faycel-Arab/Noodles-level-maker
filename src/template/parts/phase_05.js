@@ -217,8 +217,6 @@ class Levels_checker extends React.Component{
             mousePos.y = y/rows * (rows*dim);
         }
 
-        console.log( mousePos )
-
         return mousePos;
     }
 
@@ -550,13 +548,22 @@ class Levels_checker extends React.Component{
             let newTile; 
             let rm = 0;
 
+            
+            console.group("Rotating tiles randomly")
+
             tiles.forEach( ( tile, i ) => {
+
+                console.group("Tile "+i)
+
                 rotations = Tiles_Map( "regular", type ).map[tile.t];
-                newTile = randomRotation( tile,  rotations )
+                newTile = randomRotation( tile, rotations )
+                console.log( "rotation : "+newTile.tile.r )
+                console.groupEnd()
 
                 file.tiles[i] = newTile.tile;
                 rm = rm + newTile.rm; 
             })
+            console.groupEnd();
 
             // calc stars 
             stars = Array(4).fill(0).map( (v,i) => rm+stars_offset*i);

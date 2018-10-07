@@ -95,7 +95,7 @@ function randomRotation( tile, rotations){
     let po = Array( rotations ).fill(0).map( ( v, i ) => i );
 
     // generate a a randomized rotation
-    let rr = Math.floor( Math.random( po.length ));
+    let rr = Math.floor( Math.random()*po.length);
 
     // calc number of moves required to reach original rotation
     // tiles rotate clockwise
