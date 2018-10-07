@@ -535,7 +535,7 @@ class Levels_checker extends React.Component{
 
         let type = this.props.atlas;
 
-        let stars_offset = 7;
+        let stars_offset = 4;
 
         let stars;
         
@@ -548,7 +548,6 @@ class Levels_checker extends React.Component{
             let newTile; 
             let rm = 0;
 
-            
             console.group("Rotating tiles randomly")
 
             tiles.forEach( ( tile, i ) => {
@@ -557,7 +556,9 @@ class Levels_checker extends React.Component{
 
                 rotations = Tiles_Map( "regular", type ).map[tile.t];
                 newTile = randomRotation( tile, rotations )
+
                 console.log( "rotation : "+newTile.tile.r )
+                
                 console.groupEnd()
 
                 file.tiles[i] = newTile.tile;
@@ -566,15 +567,18 @@ class Levels_checker extends React.Component{
             console.groupEnd();
 
             // calc stars 
-            stars = Array(4).fill(0).map( (v,i) => rm+stars_offset*i);
+            stars = Array(4).fill(0).map( (v,i) => 
+                rm + stars_offset + stars_offset*i + i*(i-1) + stars_offset*i
+            );
 
             file.moves = stars;
 
             // level 
             blob = new Blob( [JSON.stringify(file)], {type: "text/json;charset=utf-8"});
             name = this.state.images[index].name;
-            name = name.substring( 0, name.lastIndexOf( '.' ) );                          // remove extension from original name
+            name = name.substring( 0, name.lastIndexOf( '.' ) );                
             
+            // remove extension from original name
             saveAs( blob, name+'.json');
 
         })
