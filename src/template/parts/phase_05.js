@@ -533,11 +533,40 @@ class Levels_checker extends React.Component{
 
         let blob;
 
-        let type = this.props.atlas;
+        const type = this.props.atlas;
 
-        let stars_offset = 4;
+        const cols = this.props.cols;
+
+        const rows = this.props.rows;
+
+        let stars_offset;
 
         let stars;
+
+        // calculate stars offset from cols, rows and type
+        switch( getAtlasShort(type) ){
+            case "ortho":
+                if( rows === 5 )
+                    stars_offset = 4;
+                else if( rows === 6 )
+                    stars_offset = 8;
+                else if( rows === 7 )
+                    stars_offset = 12;  
+                else if( rows === 10 )
+                    stars_offset = 16;
+                break;
+
+            case "hex":
+                if( rows === 5 )
+                    stars_offset = 6;
+                else if( rows === 6 )
+                    stars_offset = 12;
+                else if( rows === 7 )
+                    stars_offset = 18;  
+                else if( rows === 8 )
+                    stars_offset = 24;
+                break;
+        }
         
         // generate and download level files
         this.state.levels.forEach( ( file, index ) => {
